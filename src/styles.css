@@ -1,0 +1,104 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, system-ui, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: #f4f6fb; color: #1d2430; }
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: #131a26;
+  color: #fff;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar button {
+  background: #2a3447;
+  color: #fff;
+  border: 0;
+  padding: 0.7rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.sidebar button.active { background: #44577a; }
+.sidebar .gear { margin-top: auto; font-size: 1.2rem; }
+
+main { padding: 1rem; }
+.panel {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 10px 25px rgba(19, 26, 38, 0.08);
+}
+
+.panel input, .panel textarea, .modal input, .modal select {
+  width: 100%;
+  margin-bottom: 0.7rem;
+  padding: 0.6rem;
+  border: 1px solid #d4d8e0;
+  border-radius: 8px;
+}
+
+button {
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  border: none;
+  background: #3d63dd;
+  color: white;
+}
+
+.notes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.notes-list li {
+  border: 1px solid #e3e7f0;
+  border-radius: 10px;
+  padding: 0.8rem;
+}
+
+.mindmap-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+.bubble {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.1);
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: grid;
+  place-items: center;
+}
+
+.modal {
+  width: min(700px, 92vw);
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+}
