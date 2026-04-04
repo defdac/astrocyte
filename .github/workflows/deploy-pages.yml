@@ -2,7 +2,7 @@ name: Deploy Astrocyte to Pages
 
 on:
   push:
-    branches: ["main"] # Körs när du pushar till main
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -23,7 +23,7 @@ jobs:
           cache: 'npm'
 
       - name: Installera beroenden
-        run: npm ci # "Clean install" - snabbare och säkrare i Actions
+        run: npm ci # "Clean install"
 
       - name: Bygg projektet (Vite)
         run: npm run build
@@ -31,7 +31,7 @@ jobs:
       - name: Ladda upp till GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist' # Mappen som Vite skapar
+          path: './dist'
 
       - name: Deploy
         uses: actions/deploy-pages@v4
