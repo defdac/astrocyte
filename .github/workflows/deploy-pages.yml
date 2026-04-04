@@ -4,17 +4,31 @@ on:
   push:
     branches: ["main"]
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 permissions:
   contents: read
   pages: write
   id-token: write
 
+env:
+  # Opt in now to avoid Node 20 deprecation warnings for JavaScript actions.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout kod
         uses: actions/checkout@v5
+
+      - name: Konfigurera GitHub Pages
+        uses: actions/configure-pages@v5
 
       - name: Installera Node.js
         uses: actions/setup-node@v5
@@ -33,4 +47,5 @@ jobs:
           path: './dist'
 
       - name: Deploy
+        id: deployment
         uses: actions/deploy-pages@v4
