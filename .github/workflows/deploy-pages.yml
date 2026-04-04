@@ -14,16 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout kod
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Installera Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 22
 
       - name: Installera beroenden
-        run: npm ci # "Clean install"
+        run: npm install
 
       - name: Bygg projektet (Vite)
         run: npm run build
