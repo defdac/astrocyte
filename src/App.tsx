@@ -21,7 +21,7 @@ const defaultSettings: SettingsState = {
     base_url: 'http://127.0.0.1:1234',
     model_name: 'local-model',
     api_key_optional: '',
-    timeout_ms: 5000,
+    timeout_ms: 30000,
     max_tokens: 160,
     temperature: 0.1,
     system_instruction_template:

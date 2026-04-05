@@ -45,6 +45,14 @@ export function SettingsPanel({ settings, onChange, onClose, onTestConnection }:
           <input value={settings.llm.base_url} onChange={(e) => updateLLM('base_url', e.target.value)} placeholder="Base URL" />
           <input value={settings.llm.model_name} onChange={(e) => updateLLM('model_name', e.target.value)} placeholder="Model" />
           <input value={settings.llm.api_key_optional} onChange={(e) => updateLLM('api_key_optional', e.target.value)} placeholder="API key (optional)" />
+          <input
+            type="number"
+            min={1000}
+            step={1000}
+            value={settings.llm.timeout_ms}
+            onChange={(e) => updateLLM('timeout_ms', Number(e.target.value))}
+            placeholder="Timeout (ms)"
+          />
           <textarea
             value={settings.llm.system_instruction_template}
             onChange={(e) => updateLLM('system_instruction_template', e.target.value)}
