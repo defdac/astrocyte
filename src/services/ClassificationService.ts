@@ -39,7 +39,7 @@ export class ClassificationService {
     const timeout = setTimeout(() => controller.abort(), this.settings.timeout_ms);
 
     try {
-      const res = await fetch(this.buildEndpoint('/v1/chat/completions'), {
+      const res = await fetch(this.buildRequestUrl('/v1/chat/completions'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ export class ClassificationService {
   }
 
   async healthcheck(): Promise<boolean> {
-    const endpoint = this.buildEndpoint(this.settings.healthcheck_endpoint);
+    const endpoint = this.buildRequestUrl(this.settings.healthcheck_endpoint);
     try {
       const res = await fetch(endpoint, { method: 'GET' });
       return res.ok;
@@ -77,6 +77,23 @@ export class ClassificationService {
     if (/^https?:\/\//i.test(path)) return path;
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     return `${this.getRequestBaseUrl()}${normalizedPath}`;
+  }
+
+  private buildRequestUrl(path: string): string {
+    const endpoint = this.buildEndpoint(path);
+    return this.applyCorsProxy(endpoint);
+  }
+
+  private applyCorsProxy(endpoint: string): string {
+    const proxy = this.settings.cors_proxy_url?.trim();
+    if (!proxy) return endpoint;
+    if (!/^https?:\/\//i.test(proxy)) return endpoint;
+
+    const normalizedProxy = proxy.replace(/\/+$/, '');
+    if (normalizedProxy.includes('{url}')) {
+      return normalizedProxy.replace('{url}', encodeURIComponent(endpoint));
+    }
+    return `${normalizedProxy}/${encodeURIComponent(endpoint)}`;
   }
 
   private getRequestBaseUrl(): string {

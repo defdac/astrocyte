@@ -19,6 +19,7 @@ const defaultSettings: SettingsState = {
   sync_interval_minutes: 15,
   llm: {
     base_url: 'http://127.0.0.1:1234',
+    cors_proxy_url: '',
     model_name: 'local-model',
     api_key_optional: '',
     timeout_ms: 30000,

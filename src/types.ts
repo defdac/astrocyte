@@ -45,6 +45,7 @@ export interface SettingsState {
   sync_interval_minutes: number;
   llm: {
     base_url: string;
+    cors_proxy_url: string;
     model_name: string;
     api_key_optional: string;
     timeout_ms: number;
