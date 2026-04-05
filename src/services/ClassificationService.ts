@@ -37,7 +37,7 @@ export class ClassificationService {
     const timeout = setTimeout(() => controller.abort(), this.settings.timeout_ms);
 
     try {
-      const res = await fetch(`${this.settings.base_url}/v1/chat/completions`, {
+      const res = await fetch(this.buildEndpoint('/v1/chat/completions'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -58,13 +58,39 @@ export class ClassificationService {
   }
 
   async healthcheck(): Promise<boolean> {
-    const endpoint = `${this.settings.base_url}${this.settings.healthcheck_endpoint}`;
+    const endpoint = this.buildEndpoint(this.settings.healthcheck_endpoint);
     try {
       const res = await fetch(endpoint, { method: 'GET' });
       return res.ok;
     } catch {
       return false;
     }
+  }
+
+  private buildEndpoint(path: string): string {
+    if (/^https?:\/\//i.test(path)) return path;
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `${this.getRequestBaseUrl()}${normalizedPath}`;
+  }
+
+  private getRequestBaseUrl(): string {
+    const configured = this.settings.base_url.trim().replace(/\/+$/, '');
+
+    if (typeof window === 'undefined' || !import.meta.env.DEV) {
+      return configured;
+    }
+
+    try {
+      const url = new URL(configured);
+      const loopbackHosts = new Set(['127.0.0.1', 'localhost', '::1']);
+      if (loopbackHosts.has(url.hostname)) {
+        return '/__llm_proxy';
+      }
+    } catch {
+      // Fallback to configured URL when base_url cannot be parsed.
+    }
+
+    return configured;
   }
 
   private parseClassificationContent(content: string): ClassificationResponse {
