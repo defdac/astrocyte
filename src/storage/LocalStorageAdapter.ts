@@ -7,7 +7,6 @@ const MINDMAP_KEY = 'astrocyte.mindmap';
 const emptyMindmap = (): MindmapModel => ({
   version: '1.0',
   notes: [],
-  topics: [],
   edges: [],
   clusters: []
 });

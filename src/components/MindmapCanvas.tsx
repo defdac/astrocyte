@@ -8,6 +8,7 @@ interface MindmapCanvasProps {
 type GraphNode = {
   id: string;
   name: string;
+  subtitle: string;
   val: number;
   color: string;
   x: number;
@@ -33,22 +34,55 @@ export function MindmapCanvas({ model }: MindmapCanvasProps) {
     const height = 560;
     const centerX = width / 2;
     const centerY = height / 2;
+    const clusterCount = Math.max(model.clusters.length, 1);
+    const clusterRadius = Math.min(width, height) * 0.28;
+    const clusterCenters = new Map<string, { x: number; y: number }>();
 
-    const nodes: GraphNode[] = model.topics.map((topic, index) => {
-      const links = model.edges.filter((e) => e.to === topic.id && e.w >= 0.55);
-      const cluster = model.clusters.find((c) => c.children.includes(topic.id) || c.root_topic === topic.id);
-      const val = 16 + links.length * 5 + links.reduce((sum, edge) => sum + edge.w, 0) * 7;
+    model.clusters.forEach((cluster, index) => {
+      const angle = (index / clusterCount) * Math.PI * 2 - Math.PI / 2;
+      clusterCenters.set(cluster.id, {
+        x: centerX + Math.cos(angle) * clusterRadius,
+        y: centerY + Math.sin(angle) * clusterRadius
+      });
+    });
 
-      const angle = (index / Math.max(model.topics.length, 1)) * Math.PI * 2;
-      const distance = 120 + (index % 6) * 32;
+    const clusterByNoteId = new Map<string, (typeof model.clusters)[number][]>();
+    model.clusters.forEach((cluster) => {
+      cluster.note_ids.forEach((noteId) => {
+        const existing = clusterByNoteId.get(noteId) ?? [];
+        existing.push(cluster);
+        clusterByNoteId.set(noteId, existing);
+      });
+    });
+
+    const nodes: GraphNode[] = model.notes.map((note, index) => {
+      const links = model.edges.filter((e) => (e.from === note.id || e.to === note.id) && e.w >= 0.55);
+      const noteClusters = (clusterByNoteId.get(note.id) ?? []).sort((a, b) => b.size - a.size);
+      const primaryCluster = noteClusters[0];
+      const clusterCenter = primaryCluster ? clusterCenters.get(primaryCluster.id) : undefined;
+      const clusterIndex = primaryCluster ? model.clusters.findIndex((cluster) => cluster.id === primaryCluster.id) : -1;
+      const group = primaryCluster ? primaryCluster.note_ids : model.notes.map((entry) => entry.id);
+      const positionInGroup = Math.max(group.indexOf(note.id), 0);
+      const angleSeed = clusterIndex >= 0 ? clusterIndex : index;
+      const localAngle = ((positionInGroup + 1) / (group.length + 1)) * Math.PI * 2 + angleSeed * 0.4;
+      const localDistance = 24 + (positionInGroup % 5) * 18 + Math.min(group.length, 6) * 6;
+      const val = 26 + links.length * 5 + Math.min(note.tags.length, 5) * 3;
+      const label = note.title.trim() || 'Untitled note';
+      const subtitle = note.tags.slice(0, 2).join(' • ');
+
+      const fallbackAngle = (index / Math.max(model.notes.length, 1)) * Math.PI * 2;
+      const fallbackDistance = 90 + (index % 6) * 28;
+      const baseX = clusterCenter ? clusterCenter.x : centerX + Math.cos(fallbackAngle) * fallbackDistance;
+      const baseY = clusterCenter ? clusterCenter.y : centerY + Math.sin(fallbackAngle) * fallbackDistance;
 
       return {
-        id: topic.id,
-        name: topic.label,
+        id: note.id,
+        name: label.length > 24 ? `${label.slice(0, 21)}...` : label,
+        subtitle,
         val,
-        color: colorFor(cluster?.id ?? topic.id),
-        x: centerX + Math.cos(angle) * distance,
-        y: centerY + Math.sin(angle) * distance
+        color: colorFor(primaryCluster?.id ?? note.id),
+        x: baseX + Math.cos(localAngle) * localDistance,
+        y: baseY + Math.sin(localAngle) * localDistance
       };
     });
 
@@ -100,9 +134,14 @@ export function MindmapCanvas({ model }: MindmapCanvasProps) {
           {graphData.nodes.map((node) => (
             <g key={node.id} transform={`translate(${node.x}, ${node.y})`} className="mindmap-node">
               <circle r={node.val} fill={node.color} fillOpacity={0.95} />
-              <text y={2} textAnchor="middle">
+              <text y={-4} textAnchor="middle">
                 {node.name}
               </text>
+              {node.subtitle && (
+                <text y={12} textAnchor="middle" fontSize="11" opacity="0.7">
+                  {node.subtitle}
+                </text>
+              )}
             </g>
           ))}
         </svg>

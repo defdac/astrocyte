@@ -21,7 +21,7 @@ product_goal:
   core_capabilities:
     - "Skapa, läsa, uppdatera, ta bort anteckningar"
     - "Automatisk klassificering av anteckning via lokal LLM"
-    - "Visualisering av ämnen/relaterade anteckningar som bubbel-mindmap"
+    - "Visualisering av relaterade anteckningar som bubbel-mindmap"
 ```
 
 ## 2) Plattform & deploy
@@ -102,7 +102,7 @@ react_components:
   - name: NotesList
     responsibility: "Lista/sök/filter anteckningar"
   - name: MindmapCanvas
-    responsibility: "Rendera noder/bubblor och länkar"
+    responsibility: "Rendera anteckningsnoder/bubblor, taggkluster och länkar"
   - name: ClassificationService
     responsibility: "Anropa ML Studio för klassificering"
   - name: StorageAdapter
@@ -114,11 +114,11 @@ react_components:
 flowchart LR
   A[User writes/pastes note text] --> B[Ctrl+V detected in editor]
   B --> C[Send current text to ClassificationService]
-  C --> D[ML Studio returns title/tags/topics/confidence]
+  C --> D[ML Studio returns title/tags and optional topical hints]
   D --> E[Populate read-only title/tag fields live in editor]
   A --> F[Save note]
-  F --> G[Classify again for final topics/metadata]
-  G --> H[Update compact mindmap model]
+  F --> G[Classify again for final tags/metadata]
+  G --> H[Build note-centric mindmap from notes + shared tags]
   H --> I[Render in MindmapCanvas]
   F --> J[Persist via StorageAdapter]
   J --> K[(Local / Dropbox / GDrive)]
@@ -133,6 +133,8 @@ mindmap_model_principles:
   - "Separata objekt för nodes och edges"
   - "Minimal men tillräcklig metadata för rendering"
   - "Stabil identifiering via korta IDs"
+  - "Anteckningar är primära noder i mindmapen"
+  - "Taggar används för klustring och relationsstyrka"
 ```
 
 ### 7.2 JSON-schema (praktiskt format)
@@ -146,40 +148,38 @@ mindmap_model_principles:
       "text": "Kort sammanfattning av anteckningen...",
       "tags": ["jobb", "test", "api"],
       "ts": "2026-04-04T10:15:00Z"
-    }
-  ],
-  "topics": [
-    {
-      "id": "t_jobb",
-      "label": "Jobb",
-      "score": 0.97,
-      "parent": null
     },
     {
-      "id": "t_jobb_kod",
-      "label": "Kod",
-      "score": 0.91,
-      "parent": "t_jobb"
-    },
-    {
-      "id": "t_jobb_test",
-      "label": "Test-förfarande",
-      "score": 0.95,
-      "parent": "t_jobb"
+      "id": "n_02",
+      "title": "KPI-er för Q2",
+      "text": "Utkast till budget och uppföljning...",
+      "tags": ["jobb", "ekonomi", "budget"],
+      "ts": "2026-04-04T13:00:00Z"
     }
   ],
   "edges": [
-    { "from": "n_01", "to": "t_jobb", "type": "classified_as", "w": 0.97 },
-    { "from": "n_01", "to": "t_jobb_test", "type": "mentions", "w": 0.88 },
-    { "from": "t_jobb_kod", "to": "t_jobb", "type": "child_of", "w": 1.0 }
+    {
+      "from": "n_01",
+      "to": "n_02",
+      "type": "shared_tag",
+      "w": 0.73,
+      "shared_tags": ["jobb"]
+    }
   ],
   "clusters": [
     {
       "id": "c_jobb",
       "label": "Jobb",
-      "root_topic": "t_jobb",
-      "size": 42,
-      "children": ["t_jobb_kod", "t_jobb_test"]
+      "tag": "jobb",
+      "size": 2,
+      "note_ids": ["n_01", "n_02"]
+    },
+    {
+      "id": "c_ekonomi",
+      "label": "Ekonomi",
+      "tag": "ekonomi",
+      "size": 1,
+      "note_ids": ["n_02"]
     }
   ]
 }
@@ -189,15 +189,17 @@ mindmap_model_principles:
 ```yaml
 rendering_rules:
   node_size:
-    topic: "baseras på antal kopplade notes + ackumulerad vikt"
-    note: "konstant eller svagt skalad"
+    note: "baseras på antal kopplingar till andra anteckningar och antal taggar"
   node_color:
-    by_cluster: true
+    by_primary_tag_cluster: true
   edge_visibility:
     threshold_w: 0.55
   layout:
-    algorithm: "force-directed"
-    preserve_positions: true
+    algorithm: "cluster-aware radial / force-inspired"
+    preserve_positions: false
+  clustering:
+    basis: "delade taggar"
+    primary_cluster: "största eller mest representativa taggen för anteckningen"
 ```
 
 ## 8) Klassificering (ML Studio)
@@ -209,11 +211,10 @@ classification_pipeline:
   output:
     - generated_title
     - generated_tags[]
-    - topics[]
-    - confidence_per_topic
+    - optional_topics[]
     - optional_reasoning_short
   constraints:
-    - "Svar ska kunna mappas direkt till topics/edges"
+    - "Taggar ska kunna användas direkt för klustring och relationsberäkning mellan anteckningar"
     - "Titel och taggar ska vara maskin-genererade (inte manuellt redigerade i editorn)"
     - "Undvik långa fritextsvar"
 ```
@@ -224,9 +225,7 @@ Exempel på strikt svarskontrakt:
   "title": "Teststrategi för API",
   "tags": ["jobb", "test", "api"],
   "topics": [
-    {"label": "Jobb", "score": 0.97},
-    {"label": "Kod", "score": 0.91},
-    {"label": "Test-förfarande", "score": 0.95}
+    {"label": "Jobb", "score": 0.97}
   ]
 }
 ```
@@ -257,7 +256,8 @@ roadmap:
     name: "LLM-klassificering"
     includes:
       - ML Studio config + connection test
-      - Automatisk topic/edge-generering
+      - Automatisk tagg- och metadata-generering
+      - Automatisk relations- och klusterbyggnad från delade taggar
   m3:
     name: "Cloud sync"
     includes:

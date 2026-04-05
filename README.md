@@ -1,8 +1,8 @@
 # Astrocyte
 
-Single Page Application (React + Vite) för anteckningar med automatisk klassificering via lokal LLM och mindmap-visualisering.
+A React + Vite single-page app for note-taking, automatic classification via a local LLM, and mind map visualization based on notes and tags.
 
-## Kör lokalt
+## Run locally
 
 ```bash
 npm install
@@ -15,23 +15,12 @@ npm run dev
 npm run build
 ```
 
-`vite.config.ts` är konfigurerad med `base: '/astrocyte/'` för GitHub Pages.
+`vite.config.ts` is configured with `base: '/astrocyte/'` for GitHub Pages deployments.
 
-## Publicerad sida (GitHub Pages)
+## Published site (GitHub Pages)
 
 `https://defdac.github.io/astrocyte/`
 
-## CORS på GitHub Pages
+## CORS on GitHub Pages
 
-När appen körs från GitHub Pages skickas `Origin: https://defdac.github.io`, vilket ofta blockeras av lokala LLM-servrar.
-
-Lösningar:
-
-- Kör appen lokalt med `npm run dev` (Vite-proxy via `__llm_proxy`).
-- Aktivera CORS i LLM-servern för `https://defdac.github.io`.
-- Ange **CORS proxy URL (optional)** i Settings om du vill routa anrop via en egen proxy.
-
-Fältet accepterar två format:
-
-- `https://din-proxy.example.com/{url}` (rekommenderat; `{url}` ersätts med URL-kodad endpoint)
-- `https://din-proxy.example.com` (endpoint läggs till som URL-kodad path-segment)
+When the app is served from GitHub Pages, it sends `Origin: https://defdac.github.io`, which local LLM servers often block by default. Make sure CORS is enabled in LM Studio.

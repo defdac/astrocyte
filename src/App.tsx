@@ -4,7 +4,7 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { NoteEditor } from './components/NoteEditor';
 import { NotesList } from './components/NotesList';
 import { MindmapCanvas } from './components/MindmapCanvas';
-import type { MindmapModel, Note, SettingsState, Topic } from './types';
+import type { MindmapModel, Note, SettingsState } from './types';
 import { LocalStorageAdapter } from './storage/LocalStorageAdapter';
 import { DropboxStorageAdapter, GoogleDriveStorageAdapter } from './storage/CloudStubs';
 import type { StorageAdapter } from './storage/StorageAdapter';
@@ -20,7 +20,7 @@ const defaultSettings: SettingsState = {
   llm: {
     base_url: 'http://127.0.0.1:1234',
     cors_proxy_url: '',
-    model_name: 'local-model',
+    model_name: 'qwen2.5-coder-7b-instruct.gguf',
     api_key_optional: '',
     timeout_ms: 30000,
     max_tokens: 160,
@@ -47,43 +47,74 @@ const readSettings = (): SettingsState => {
   };
 };
 
-const normalizeTopicId = (label: string) => `t_${label.toLowerCase().replace(/[^a-z0-9åäö]+/gi, '_')}`;
+const normalizeTag = (tag: string) => tag.trim().toLowerCase();
+const normalizeTagId = (tag: string) => `c_${normalizeTag(tag).replace(/[^a-z0-9åäö]+/gi, '_')}`;
 
-const buildMindmap = (notes: Note[], existing: MindmapModel, topicsForNote: Record<string, Topic[]>): MindmapModel => {
-  const topics = new Map<string, Topic>();
+const buildMindmap = (notes: Note[]): MindmapModel => {
   const edges = [] as MindmapModel['edges'];
+  const tagToNotes = new Map<string, Set<string>>();
+  const tagLabels = new Map<string, string>();
+  const tagsByNote = new Map<string, string[]>();
 
   for (const note of notes) {
-    const noteTopics = topicsForNote[note.id] ?? [];
-    for (const t of noteTopics) {
-      topics.set(t.id, t);
-      edges.push({ from: note.id, to: t.id, type: 'classified_as', w: t.score });
-      edges.push({ from: note.id, to: t.id, type: 'mentions', w: Math.max(0.55, t.score - 0.05) });
+    const normalizedTags = Array.from(
+      new Set(
+        note.tags
+          .map((tag) => tag.trim())
+          .filter(Boolean)
+          .map((tag) => {
+            const normalized = normalizeTag(tag);
+            if (!tagLabels.has(normalized)) tagLabels.set(normalized, tag);
+            return normalized;
+          })
+      )
+    );
+
+    tagsByNote.set(note.id, normalizedTags);
+
+    for (const tag of normalizedTags) {
+      const existing = tagToNotes.get(tag) ?? new Set<string>();
+      existing.add(note.id);
+      tagToNotes.set(tag, existing);
     }
   }
 
-  const clusterByRoot = new Map<string, string[]>();
-  for (const topic of topics.values()) {
-    const root = topic.parent ?? topic.id;
-    const list = clusterByRoot.get(root) ?? [];
-    if (topic.id !== root) list.push(topic.id);
-    clusterByRoot.set(root, list);
-    if (topic.parent) edges.push({ from: topic.id, to: root, type: 'child_of', w: 1.0 });
+  for (let i = 0; i < notes.length; i++) {
+    for (let j = i + 1; j < notes.length; j++) {
+      const left = notes[i];
+      const right = notes[j];
+      const leftTags = new Set(tagsByNote.get(left.id) ?? []);
+      const sharedTags = (tagsByNote.get(right.id) ?? []).filter((tag) => leftTags.has(tag));
+
+      if (!sharedTags.length) continue;
+
+      const totalDistinctTags = new Set([...(tagsByNote.get(left.id) ?? []), ...(tagsByNote.get(right.id) ?? [])]).size || 1;
+      const overlap = sharedTags.length / totalDistinctTags;
+      const weight = Math.min(1, 0.55 + sharedTags.length * 0.15 + overlap * 0.3);
+
+      edges.push({
+        from: left.id,
+        to: right.id,
+        type: 'shared_tag',
+        w: weight,
+        shared_tags: sharedTags.map((tag) => tagLabels.get(tag) ?? tag)
+      });
+    }
   }
 
-  const clusters = Array.from(clusterByRoot.entries()).map(([root, children]) => ({
-    id: `c_${root}`,
-    label: topics.get(root)?.label ?? root,
-    root_topic: root,
-    size: edges.filter((e) => e.to === root).length,
-    children
-  }));
+  const clusters = Array.from(tagToNotes.entries())
+    .map(([tag, noteIds]) => ({
+      id: normalizeTagId(tag),
+      label: tagLabels.get(tag) ?? tag,
+      tag,
+      size: noteIds.size,
+      note_ids: Array.from(noteIds)
+    }))
+    .sort((a, b) => b.size - a.size || a.label.localeCompare(b.label));
 
   return {
-    ...existing,
     version: '1.0',
     notes,
-    topics: Array.from(topics.values()),
     edges,
     clusters
   };
@@ -100,8 +131,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<SettingsState>(defaultSettings);
   const [notes, setNotes] = useState<Note[]>([]);
-  const [mindmap, setMindmap] = useState<MindmapModel>({ version: '1.0', notes: [], topics: [], edges: [], clusters: [] });
-  const [topicByNote, setTopicByNote] = useState<Record<string, Topic[]>>({});
+  const [mindmap, setMindmap] = useState<MindmapModel>({ version: '1.0', notes: [], edges: [], clusters: [] });
 
   const storageAdapter: StorageAdapter = useMemo(() => {
     if (settings.provider === 'dropbox') return new DropboxStorageAdapter();
@@ -121,9 +151,11 @@ export default function App() {
     void storageAdapter
       .init()
       .then(async () => {
-        const [storedNotes, storedMindmap] = await Promise.all([storageAdapter.listNotes(), storageAdapter.exportMindmap()]);
+        const storedNotes = await storageAdapter.listNotes();
+        const rebuiltMindmap = buildMindmap(storedNotes);
+        await storageAdapter.importMindmap(rebuiltMindmap);
         setNotes(storedNotes);
-        setMindmap(storedMindmap);
+        setMindmap(rebuiltMindmap);
       })
       .catch(() => undefined);
   }, [settings, storageAdapter]);
@@ -151,21 +183,12 @@ export default function App() {
       tags: generated.tags
     };
 
-    const mappedTopics = classification.topics.map((t, idx) => ({
-      id: normalizeTopicId(t.label) || `t_${idx}`,
-      label: t.label,
-      score: t.score,
-      parent: null
-    }));
-
     const nextNotes = [note, ...notes];
-    const nextTopicByNote = { ...topicByNote, [note.id]: mappedTopics };
-    const nextMindmap = buildMindmap(nextNotes, mindmap, nextTopicByNote);
+    const nextMindmap = buildMindmap(nextNotes);
 
     await storageAdapter.saveNote(note);
     await storageAdapter.importMindmap(nextMindmap);
 
-    setTopicByNote(nextTopicByNote);
     setNotes(nextNotes);
     setMindmap(nextMindmap);
     setView('mindmap');
@@ -191,12 +214,9 @@ export default function App() {
 
   const deleteNote = async (id: string) => {
     const next = notes.filter((n) => n.id !== id);
-    const nextTopics = { ...topicByNote };
-    delete nextTopics[id];
-    const nextMindmap = buildMindmap(next, mindmap, nextTopics);
+    const nextMindmap = buildMindmap(next);
     await storageAdapter.deleteNote(id);
     await storageAdapter.importMindmap(nextMindmap);
-    setTopicByNote(nextTopics);
     setNotes(next);
     setMindmap(nextMindmap);
   };

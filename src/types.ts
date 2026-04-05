@@ -6,32 +6,25 @@ export interface Note {
   ts: string;
 }
 
-export interface Topic {
-  id: string;
-  label: string;
-  score: number;
-  parent: string | null;
-}
-
 export interface Edge {
   from: string;
   to: string;
-  type: 'classified_as' | 'mentions' | 'child_of';
+  type: 'shared_tag';
   w: number;
+  shared_tags: string[];
 }
 
 export interface Cluster {
   id: string;
   label: string;
-  root_topic: string;
+  tag: string;
   size: number;
-  children: string[];
+  note_ids: string[];
 }
 
 export interface MindmapModel {
   version: '1.0';
   notes: Note[];
-  topics: Topic[];
   edges: Edge[];
   clusters: Cluster[];
 }
