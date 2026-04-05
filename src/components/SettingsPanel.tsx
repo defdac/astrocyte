@@ -43,6 +43,11 @@ export function SettingsPanel({ settings, onChange, onClose, onTestConnection }:
         <section>
           <h3>Lokal LLM (ML Studio)</h3>
           <input value={settings.llm.base_url} onChange={(e) => updateLLM('base_url', e.target.value)} placeholder="Base URL" />
+          <input
+            value={settings.llm.cors_proxy_url}
+            onChange={(e) => updateLLM('cors_proxy_url', e.target.value)}
+            placeholder="CORS proxy URL (optional)"
+          />
           <input value={settings.llm.model_name} onChange={(e) => updateLLM('model_name', e.target.value)} placeholder="Model" />
           <input value={settings.llm.api_key_optional} onChange={(e) => updateLLM('api_key_optional', e.target.value)} placeholder="API key (optional)" />
           <input
