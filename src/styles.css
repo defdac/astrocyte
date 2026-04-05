@@ -49,6 +49,11 @@ main { padding: 1rem; }
   border-radius: 8px;
 }
 
+.panel input[readonly] {
+  background: #f7f9fc;
+  color: #5f6b7d;
+}
+
 button {
   padding: 0.55rem 0.9rem;
   border-radius: 8px;
