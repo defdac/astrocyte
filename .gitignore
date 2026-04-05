@@ -1,1 +1,16 @@
-node_modules/
+# Bygg-filer
+node_modules
+dist
+dist-ssr
+*.local
+
+# Dropbox/OS-specifikt
+.DS_Store
+Thumbs.db
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Vite temporary config files
+vite.config.ts.timestamp-*
+*.mjs

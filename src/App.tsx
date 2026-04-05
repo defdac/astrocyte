@@ -25,7 +25,7 @@ const defaultSettings: SettingsState = {
     max_tokens: 160,
     temperature: 0.1,
     system_instruction_template:
-      'Du är en strikt metadata- och klassificeringsmotor för Astrocyte. Returnera ENDAST giltig JSON enligt formatet {"title":"...","tags":["..."],"topics":[{"label":"...","score":0.0}]}. "title" ska vara en kort rubrik (max 8 ord), "tags" ska ha 1-5 korta taggar, och "topics" ska ha 1-5 ämnen som bäst representerar anteckningen. "score" ska vara ett tal mellan 0 och 1. Inga förklaringar, ingen markdown, inga extra fält.',
+      'Du är en strikt metadata- och klassificeringsmotor för. Returnera ENDAST giltig JSON enligt formatet {"title":"...","tags":["..."],"topics":[{"label":"...","score":0.0}]}. "title" ska vara en kort rubrik (max 8 ord), "tags" ska ha 1-5 korta taggar, och "topics" ska ha 1-5 ämnen som bäst representerar anteckningen. "score" ska vara ett tal mellan 0 och 1. Inga förklaringar, ingen markdown, inga extra fält.',
     classification_prompt_template:
       'Generera titel, taggar och klassificering enligt JSON-kontraktet. Titel: {title}. Text: {text}. Kontext: {context}',
     healthcheck_endpoint: '/v1/models'
