@@ -6,6 +6,8 @@ export interface ClassifiedTopic {
 }
 
 interface ClassificationResponse {
+  title?: string;
+  tags?: string[];
   topics: ClassifiedTopic[];
 }
 
@@ -47,11 +49,15 @@ export class ClassificationService {
         signal: controller.signal
       });
       const json = await res.json();
-      const content: string = json?.choices?.[0]?.message?.content ?? '{"topics":[]}';
+      const content: string = json?.choices?.[0]?.message?.content ?? '{"title":"","tags":[],"topics":[]}';
       const parsed = this.parseClassificationContent(content);
-      return { topics: parsed.topics ?? [] };
+      return {
+        title: parsed.title,
+        tags: Array.isArray(parsed.tags) ? parsed.tags.filter((tag): tag is string => Boolean(tag?.trim())).map((tag) => tag.trim()) : [],
+        topics: parsed.topics ?? []
+      };
     } catch {
-      return { topics: [] };
+      return { title: '', tags: [], topics: [] };
     } finally {
       clearTimeout(timeout);
     }
@@ -98,11 +104,11 @@ export class ClassificationService {
       return JSON.parse(content) as ClassificationResponse;
     } catch {
       const match = content.match(/\{[\s\S]*\}/);
-      if (!match) return { topics: [] };
+      if (!match) return { title: '', tags: [], topics: [] };
       try {
         return JSON.parse(match[0]) as ClassificationResponse;
       } catch {
-        return { topics: [] };
+        return { title: '', tags: [], topics: [] };
       }
     }
   }

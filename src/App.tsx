@@ -25,9 +25,9 @@ const defaultSettings: SettingsState = {
     max_tokens: 160,
     temperature: 0.1,
     system_instruction_template:
-      'Du är en strikt klassificeringsmotor för Astrocyte. Returnera ENDAST giltig JSON enligt formatet {"topics":[{"label":"...","score":0.0}]}. Välj 1-5 ämnen som bäst representerar anteckningen. "score" ska vara ett tal mellan 0 och 1. Inga förklaringar, ingen markdown, inga extra fält.',
+      'Du är en strikt metadata- och klassificeringsmotor för Astrocyte. Returnera ENDAST giltig JSON enligt formatet {"title":"...","tags":["..."],"topics":[{"label":"...","score":0.0}]}. "title" ska vara en kort rubrik (max 8 ord), "tags" ska ha 1-5 korta taggar, och "topics" ska ha 1-5 ämnen som bäst representerar anteckningen. "score" ska vara ett tal mellan 0 och 1. Inga förklaringar, ingen markdown, inga extra fält.',
     classification_prompt_template:
-      'Klassificera anteckningen till JSON-kontraktet. Titel: {title}. Text: {text}. Kontext: {context}',
+      'Generera titel, taggar och klassificering enligt JSON-kontraktet. Titel: {title}. Text: {text}. Kontext: {context}',
     healthcheck_endpoint: '/v1/models'
   }
 };
@@ -88,6 +88,12 @@ const buildMindmap = (notes: Note[], existing: MindmapModel, topicsForNote: Reco
   };
 };
 
+const toGeneratedMetadata = (text: string, title?: string, tags?: string[], topicLabels: string[] = []) => {
+  const generatedTitle = title?.trim() || text.split('\n').find(Boolean)?.trim()?.slice(0, 80) || 'Untitled note';
+  const generatedTags = (tags?.length ? tags : topicLabels).slice(0, 5);
+  return { title: generatedTitle, tags: generatedTags };
+};
+
 export default function App() {
   const [view, setView] = useState<'mindmap' | 'notes' | 'editor'>('mindmap');
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -121,16 +127,29 @@ export default function App() {
       .catch(() => undefined);
   }, [settings, storageAdapter]);
 
-  const saveNote = async (draft: Omit<Note, 'id' | 'ts'>) => {
-    const note: Note = {
+  const saveNote = async (text: string) => {
+    const baseNote = {
       id: `n_${crypto.randomUUID().slice(0, 8)}`,
-      title: draft.title,
-      text: draft.text,
-      tags: draft.tags,
+      title: '',
+      text,
+      tags: [],
       ts: new Date().toISOString()
+    } as Note;
+
+    const classification = await classifier.classify(baseNote);
+    const generated = toGeneratedMetadata(
+      text,
+      classification.title,
+      classification.tags,
+      classification.topics.map((topic) => topic.label)
+    );
+
+    const note: Note = {
+      ...baseNote,
+      title: generated.title,
+      tags: generated.tags
     };
 
-    const classification = await classifier.classify(note);
     const mappedTopics = classification.topics.map((t, idx) => ({
       id: normalizeTopicId(t.label) || `t_${idx}`,
       label: t.label,
@@ -149,6 +168,24 @@ export default function App() {
     setNotes(nextNotes);
     setMindmap(nextMindmap);
     setView('mindmap');
+    return generated;
+  };
+
+  const generateMetadata = async (text: string) => {
+    const baseNote: Note = {
+      id: 'preview',
+      title: '',
+      text,
+      tags: [],
+      ts: new Date().toISOString()
+    };
+    const classification = await classifier.classify(baseNote);
+    return toGeneratedMetadata(
+      text,
+      classification.title,
+      classification.tags,
+      classification.topics.map((topic) => topic.label)
+    );
   };
 
   const deleteNote = async (id: string) => {
@@ -169,7 +206,7 @@ export default function App() {
       <main>
         {view === 'mindmap' && <MindmapCanvas model={mindmap} />}
         {view === 'notes' && <NotesList notes={notes} onDelete={(id) => void deleteNote(id)} />}
-        {view === 'editor' && <NoteEditor onSave={(note) => void saveNote(note)} />}
+        {view === 'editor' && <NoteEditor onGenerateMetadata={generateMetadata} onSave={saveNote} />}
       </main>
       {settingsOpen && (
         <SettingsPanel

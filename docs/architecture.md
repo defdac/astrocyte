@@ -5,7 +5,7 @@
 spec_id: astrocyte-architecture-v1
 language: sv-SE
 status: draft
-last_updated: 2026-04-04
+last_updated: 2026-04-06
 owners:
   - product
   - engineering
@@ -98,7 +98,7 @@ react_components:
   - name: SettingsPanel
     responsibility: "Konfigurera storage + LLM"
   - name: NoteEditor
-    responsibility: "Skapa/redigera anteckning"
+    responsibility: "Skapa anteckningstext och visa LLM-genererad titel/taggar (read-only)"
   - name: NotesList
     responsibility: "Lista/sök/filter anteckningar"
   - name: MindmapCanvas
@@ -112,13 +112,16 @@ react_components:
 ## 6) Dataflöde
 ```mermaid
 flowchart LR
-  A[User writes note] --> B[Save note draft]
-  B --> C[Send note to ClassificationService]
-  C --> D[ML Studio returns labels/topics/confidence]
-  D --> E[Update compact mindmap model]
-  E --> F[Render in MindmapCanvas]
-  B --> G[Persist via StorageAdapter]
-  G --> H[(Local / Dropbox / GDrive)]
+  A[User writes/pastes note text] --> B[Ctrl+V detected in editor]
+  B --> C[Send current text to ClassificationService]
+  C --> D[ML Studio returns title/tags/topics/confidence]
+  D --> E[Populate read-only title/tag fields live in editor]
+  A --> F[Save note]
+  F --> G[Classify again for final topics/metadata]
+  G --> H[Update compact mindmap model]
+  H --> I[Render in MindmapCanvas]
+  F --> J[Persist via StorageAdapter]
+  J --> K[(Local / Dropbox / GDrive)]
 ```
 
 ## 7) Mindmap-datamodell (kompakt + LLM-vänlig)
@@ -201,21 +204,25 @@ rendering_rules:
 ```yaml
 classification_pipeline:
   input:
-    - note_title
     - note_text
     - optional_context_summary
   output:
+    - generated_title
+    - generated_tags[]
     - topics[]
     - confidence_per_topic
     - optional_reasoning_short
   constraints:
     - "Svar ska kunna mappas direkt till topics/edges"
+    - "Titel och taggar ska vara maskin-genererade (inte manuellt redigerade i editorn)"
     - "Undvik långa fritextsvar"
 ```
 
 Exempel på strikt svarskontrakt:
 ```json
 {
+  "title": "Teststrategi för API",
+  "tags": ["jobb", "test", "api"],
   "topics": [
     {"label": "Jobb", "score": 0.97},
     {"label": "Kod", "score": 0.91},
