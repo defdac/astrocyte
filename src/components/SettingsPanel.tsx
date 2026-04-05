@@ -45,6 +45,18 @@ export function SettingsPanel({ settings, onChange, onClose, onTestConnection }:
           <input value={settings.llm.base_url} onChange={(e) => updateLLM('base_url', e.target.value)} placeholder="Base URL" />
           <input value={settings.llm.model_name} onChange={(e) => updateLLM('model_name', e.target.value)} placeholder="Model" />
           <input value={settings.llm.api_key_optional} onChange={(e) => updateLLM('api_key_optional', e.target.value)} placeholder="API key (optional)" />
+          <textarea
+            value={settings.llm.system_instruction_template}
+            onChange={(e) => updateLLM('system_instruction_template', e.target.value)}
+            placeholder="Systeminstruktion för klassificering"
+            rows={4}
+          />
+          <textarea
+            value={settings.llm.classification_prompt_template}
+            onChange={(e) => updateLLM('classification_prompt_template', e.target.value)}
+            placeholder="Promptmall för klassificering"
+            rows={4}
+          />
           <input
             value={settings.llm.healthcheck_endpoint}
             onChange={(e) => updateLLM('healthcheck_endpoint', e.target.value)}

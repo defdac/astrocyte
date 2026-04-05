@@ -81,6 +81,7 @@ settings:
       - timeout_ms
       - max_tokens
       - temperature
+      - system_instruction_template
       - classification_prompt_template
     healthcheck:
       endpoint: "/health eller /v1/models (konfigurerbart)"

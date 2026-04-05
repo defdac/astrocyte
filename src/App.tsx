@@ -24,8 +24,10 @@ const defaultSettings: SettingsState = {
     timeout_ms: 5000,
     max_tokens: 160,
     temperature: 0.1,
+    system_instruction_template:
+      'Du är en strikt klassificeringsmotor för Astrocyte. Returnera ENDAST giltig JSON enligt formatet {"topics":[{"label":"...","score":0.0}]}. Välj 1-5 ämnen som bäst representerar anteckningen. "score" ska vara ett tal mellan 0 och 1. Inga förklaringar, ingen markdown, inga extra fält.',
     classification_prompt_template:
-      'Klassificera anteckningen till JSON {"topics":[{"label":"...","score":0.0}]}. Titel: {title}. Text: {text}. Kontext: {context}',
+      'Klassificera anteckningen till JSON-kontraktet. Titel: {title}. Text: {text}. Kontext: {context}',
     healthcheck_endpoint: '/v1/models'
   }
 };
@@ -33,7 +35,15 @@ const defaultSettings: SettingsState = {
 const readSettings = (): SettingsState => {
   const raw = localStorage.getItem(SETTINGS_KEY);
   if (!raw) return defaultSettings;
-  return { ...defaultSettings, ...JSON.parse(raw) } as SettingsState;
+  const parsed = JSON.parse(raw) as Partial<SettingsState>;
+  return {
+    ...defaultSettings,
+    ...parsed,
+    llm: {
+      ...defaultSettings.llm,
+      ...(parsed.llm ?? {})
+    }
+  };
 };
 
 const normalizeTopicId = (label: string) => `t_${label.toLowerCase().replace(/[^a-z0-9åäö]+/gi, '_')}`;
