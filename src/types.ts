@@ -50,6 +50,7 @@ export interface SettingsState {
     timeout_ms: number;
     max_tokens: number;
     temperature: number;
+    system_instruction_template: string;
     classification_prompt_template: string;
     healthcheck_endpoint: string;
   };

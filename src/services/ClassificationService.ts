@@ -17,6 +17,7 @@ export class ClassificationService {
   }
 
   async classify(note: Note, optional_context_summary?: string): Promise<ClassificationResponse> {
+    const systemInstruction = this.settings.system_instruction_template;
     const prompt = this.settings.classification_prompt_template
       .replace('{title}', note.title)
       .replace('{text}', note.text)
@@ -24,7 +25,10 @@ export class ClassificationService {
 
     const body = {
       model: this.settings.model_name,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        { role: 'system', content: systemInstruction },
+        { role: 'user', content: prompt }
+      ],
       max_tokens: this.settings.max_tokens,
       temperature: this.settings.temperature
     };
@@ -44,7 +48,7 @@ export class ClassificationService {
       });
       const json = await res.json();
       const content: string = json?.choices?.[0]?.message?.content ?? '{"topics":[]}';
-      const parsed = JSON.parse(content) as ClassificationResponse;
+      const parsed = this.parseClassificationContent(content);
       return { topics: parsed.topics ?? [] };
     } catch {
       return { topics: [] };
@@ -60,6 +64,20 @@ export class ClassificationService {
       return res.ok;
     } catch {
       return false;
+    }
+  }
+
+  private parseClassificationContent(content: string): ClassificationResponse {
+    try {
+      return JSON.parse(content) as ClassificationResponse;
+    } catch {
+      const match = content.match(/\{[\s\S]*\}/);
+      if (!match) return { topics: [] };
+      try {
+        return JSON.parse(match[0]) as ClassificationResponse;
+      } catch {
+        return { topics: [] };
+      }
     }
   }
 }
