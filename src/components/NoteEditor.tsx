@@ -1,16 +1,22 @@
+import type { Note } from '../types';
 import { useState } from 'react';
 
 interface NoteEditorProps {
   onGenerateMetadata: (text: string) => Promise<{ title: string; tags: string[] }>;
   onSave: (text: string) => Promise<{ title: string; tags: string[] }>;
+  previewNote?: Note | null;
 }
 
-export function NoteEditor({ onGenerateMetadata, onSave }: NoteEditorProps) {
+export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEditorProps) {
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingMetadata, setIsGeneratingMetadata] = useState(false);
+  const isPreviewing = Boolean(previewNote);
+  const displayedTitle = previewNote?.title ?? title;
+  const displayedText = previewNote?.text ?? text;
+  const displayedTags = previewNote?.tags.join(', ') ?? tags;
 
   const fillGeneratedMetadata = async (nextText: string) => {
     if (!nextText.trim()) return;
@@ -26,12 +32,13 @@ export function NoteEditor({ onGenerateMetadata, onSave }: NoteEditorProps) {
 
   return (
     <section className="panel">
-      <h2>Ny anteckning</h2>
-      <input value={title} placeholder="Titel (autogenereras vid sparning)" readOnly />
+      <h2>{isPreviewing ? 'Förhandsvisning av anteckning' : 'Ny anteckning'}</h2>
+      <input value={displayedTitle} placeholder="Titel (autogenereras vid sparning)" readOnly />
       <textarea
-        value={text}
+        value={displayedText}
         onChange={(e) => setText(e.target.value)}
         onPaste={(e) => {
+          if (isPreviewing) return;
           const pasted = e.clipboardData.getData('text');
           const start = e.currentTarget.selectionStart ?? text.length;
           const end = e.currentTarget.selectionEnd ?? text.length;
@@ -40,11 +47,12 @@ export function NoteEditor({ onGenerateMetadata, onSave }: NoteEditorProps) {
         }}
         placeholder="Skriv din anteckning"
         rows={10}
+        readOnly={isPreviewing}
       />
-      <input value={tags} placeholder="Taggar (autogenereras vid sparning)" readOnly />
+      <input value={displayedTags} placeholder="Taggar (autogenereras vid sparning)" readOnly />
       <button
         onClick={async () => {
-          if (!text || isSaving) return;
+          if (!text || isSaving || isPreviewing) return;
           setIsSaving(true);
           try {
             const generated = await onSave(text);
@@ -55,11 +63,11 @@ export function NoteEditor({ onGenerateMetadata, onSave }: NoteEditorProps) {
             setIsSaving(false);
           }
         }}
-        disabled={!text || isSaving || isGeneratingMetadata}
+        disabled={!text || isSaving || isGeneratingMetadata || isPreviewing}
       >
         {isSaving ? 'Sparar…' : 'Spara'}
       </button>
-      {isGeneratingMetadata && <small>Genererar rubrik och taggar från inklistrad text…</small>}
+      {isGeneratingMetadata && !isPreviewing && <small>Genererar rubrik och taggar från inklistrad text…</small>}
     </section>
   );
 }

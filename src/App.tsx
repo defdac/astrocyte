@@ -127,11 +127,12 @@ const toGeneratedMetadata = (text: string, title?: string, tags?: string[], topi
 };
 
 export default function App() {
-  const [view, setView] = useState<'mindmap' | 'notes' | 'editor'>('mindmap');
+  const [view, setView] = useState<'notes' | 'editor'>('editor');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<SettingsState>(defaultSettings);
   const [notes, setNotes] = useState<Note[]>([]);
   const [mindmap, setMindmap] = useState<MindmapModel>({ version: '1.0', notes: [], edges: [], clusters: [] });
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
 
   const storageAdapter: StorageAdapter = useMemo(() => {
     if (settings.provider === 'dropbox') return new DropboxStorageAdapter();
@@ -191,7 +192,7 @@ export default function App() {
 
     setNotes(nextNotes);
     setMindmap(nextMindmap);
-    setView('mindmap');
+    setView('editor');
     return generated;
   };
 
@@ -221,13 +222,19 @@ export default function App() {
     setMindmap(nextMindmap);
   };
 
+  const previewNote = selectedNoteId ? notes.find((note) => note.id === selectedNoteId) ?? null : null;
+
   return (
     <div className="app-shell">
       <Sidebar active={view} onNavigate={setView} onOpenSettings={() => setSettingsOpen(true)} />
       <main>
-        {view === 'mindmap' && <MindmapCanvas model={mindmap} />}
         {view === 'notes' && <NotesList notes={notes} onDelete={(id) => void deleteNote(id)} />}
-        {view === 'editor' && <NoteEditor onGenerateMetadata={generateMetadata} onSave={saveNote} />}
+        {view === 'editor' && (
+          <div className="editor-stack">
+            <NoteEditor onGenerateMetadata={generateMetadata} onSave={saveNote} previewNote={previewNote} />
+            <MindmapCanvas model={mindmap} selectedNoteId={selectedNoteId} onSelectNote={setSelectedNoteId} />
+          </div>
+        )}
       </main>
       {settingsOpen && (
         <SettingsPanel

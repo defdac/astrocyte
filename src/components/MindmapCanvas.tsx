@@ -3,6 +3,8 @@ import type { MindmapModel } from '../types';
 
 interface MindmapCanvasProps {
   model: MindmapModel;
+  selectedNoteId?: string | null;
+  onSelectNote?: (noteId: string | null) => void;
 }
 
 type GraphNode = {
@@ -28,7 +30,7 @@ const colorFor = (clusterId: string) => {
   return palette[hash % palette.length];
 };
 
-export function MindmapCanvas({ model }: MindmapCanvasProps) {
+export function MindmapCanvas({ model, selectedNoteId, onSelectNote }: MindmapCanvasProps) {
   const graphData = useMemo(() => {
     const width = 960;
     const height = 560;
@@ -100,10 +102,10 @@ export function MindmapCanvas({ model }: MindmapCanvasProps) {
   const nodeById = useMemo(() => new Map(graphData.nodes.map((node) => [node.id, node])), [graphData.nodes]);
 
   return (
-    <section className="panel">
+    <section className="panel mindmap-panel">
       <h2>Mindmap</h2>
       <div className="mindmap-canvas-wrap" role="img" aria-label="Mindmap visualisering">
-        <svg viewBox={`0 0 ${graphData.width} ${graphData.height}`} className="mindmap-svg">
+        <svg viewBox={`0 0 ${graphData.width} ${graphData.height}`} className="mindmap-svg" onClick={() => onSelectNote?.(null)}>
           <defs>
             <linearGradient id="edgeGradient" x1="0" x2="1" y1="0" y2="1">
               <stop offset="0%" stopColor="#6f8ce8" stopOpacity="0.35" />
@@ -132,7 +134,15 @@ export function MindmapCanvas({ model }: MindmapCanvasProps) {
           })}
 
           {graphData.nodes.map((node) => (
-            <g key={node.id} transform={`translate(${node.x}, ${node.y})`} className="mindmap-node">
+            <g
+              key={node.id}
+              transform={`translate(${node.x}, ${node.y})`}
+              className={`mindmap-node${selectedNoteId === node.id ? ' is-selected' : ''}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onSelectNote?.(selectedNoteId === node.id ? null : node.id);
+              }}
+            >
               <circle r={node.val} fill={node.color} fillOpacity={0.95} />
               <text y={-4} textAnchor="middle">
                 {node.name}

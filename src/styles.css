@@ -4,12 +4,14 @@
 }
 
 * { box-sizing: border-box; }
+html, body, #root { height: 100%; }
 body { margin: 0; background: #f4f6fb; color: #1d2430; }
 
 .app-shell {
   display: grid;
   grid-template-columns: 220px 1fr;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -33,7 +35,20 @@ body { margin: 0; background: #f4f6fb; color: #1d2430; }
 .sidebar button.active { background: #44577a; }
 .sidebar .gear { margin-top: auto; font-size: 1.2rem; }
 
-main { padding: 1rem; }
+main {
+  padding: 1rem;
+  min-height: 0;
+  overflow: auto;
+}
+
+.editor-stack {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1rem;
+  height: 100%;
+  min-height: 0;
+}
+
 .panel {
   background: #fff;
   border-radius: 14px;
@@ -82,12 +97,19 @@ button {
   overflow: hidden;
   border: 1px solid #e3e9f6;
   background: radial-gradient(circle at top, #f4f8ff 0%, #edf3ff 40%, #e7efff 100%);
+  min-height: 0;
 }
 
 .mindmap-svg {
   width: 100%;
-  height: min(70vh, 580px);
+  height: 100%;
   display: block;
+}
+
+.mindmap-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .mindmap-link {
@@ -97,6 +119,8 @@ button {
 .mindmap-node {
   transform-origin: center;
   animation: node-pulse 4s ease-in-out infinite;
+  cursor: pointer;
+  transition: filter 140ms ease, opacity 140ms ease;
 }
 
 .mindmap-node text {
@@ -104,6 +128,30 @@ button {
   font-weight: 600;
   fill: #1d2430;
   pointer-events: none;
+}
+
+.mindmap-node.is-selected {
+  filter: drop-shadow(0 0 14px rgba(61, 99, 221, 0.38));
+  opacity: 0.96;
+}
+
+.mindmap-node.is-selected circle {
+  stroke: rgba(36, 63, 135, 0.7);
+  stroke-width: 3px;
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    gap: 0.75rem;
+  }
+
+  .sidebar .gear {
+    margin-top: 0;
+  }
 }
 
 @keyframes link-flow {
