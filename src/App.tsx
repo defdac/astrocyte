@@ -20,7 +20,7 @@ const defaultSettings: SettingsState = {
   llm: {
     base_url: 'http://127.0.0.1:1234',
     cors_proxy_url: '',
-    model_name: 'qwen2.5-coder-7b-instruct.gguf',
+    model_name: 'Qwen3.5-9B-Q4_K_M.gguf',
     api_key_optional: '',
     timeout_ms: 30000,
     max_tokens: 160,
