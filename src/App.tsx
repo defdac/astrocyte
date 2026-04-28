@@ -11,6 +11,10 @@ import type { StorageAdapter } from './storage/StorageAdapter';
 import { ClassificationService } from './services/ClassificationService';
 
 const SETTINGS_KEY = 'astrocyte.settings';
+const DEFAULT_SYSTEM_INSTRUCTION_TEMPLATE =
+  'You are a strict metadata and classification engine. Return ONLY valid JSON in the format {"title":"...","tags":["..."],"topics":[{"label":"...","score":0.0}]}. "title" must be a short heading (max 8 words), "tags" must contain 1-5 short tags, and "topics" must contain 1-5 topics that best represent the note. "score" must be a number between 0 and 1. No explanations, no markdown, no extra fields.';
+const DEFAULT_CLASSIFICATION_PROMPT_TEMPLATE =
+  'Generate title, tags, and classification according to the JSON contract. Title: {title}. Text: {text}. Context: {context}';
 
 const defaultSettings: SettingsState = {
   provider: 'local',
@@ -25,10 +29,8 @@ const defaultSettings: SettingsState = {
     timeout_ms: 30000,
     max_tokens: 160,
     temperature: 0.1,
-    system_instruction_template:
-      'Du är en strikt metadata- och klassificeringsmotor för. Returnera ENDAST giltig JSON enligt formatet {"title":"...","tags":["..."],"topics":[{"label":"...","score":0.0}]}. "title" ska vara en kort rubrik (max 8 ord), "tags" ska ha 1-5 korta taggar, och "topics" ska ha 1-5 ämnen som bäst representerar anteckningen. "score" ska vara ett tal mellan 0 och 1. Inga förklaringar, ingen markdown, inga extra fält.',
-    classification_prompt_template:
-      'Generera titel, taggar och klassificering enligt JSON-kontraktet. Titel: {title}. Text: {text}. Kontext: {context}',
+    system_instruction_template: DEFAULT_SYSTEM_INSTRUCTION_TEMPLATE,
+    classification_prompt_template: DEFAULT_CLASSIFICATION_PROMPT_TEMPLATE,
     healthcheck_endpoint: '/v1/models'
   }
 };
