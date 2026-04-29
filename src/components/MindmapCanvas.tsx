@@ -5,6 +5,7 @@ interface MindmapCanvasProps {
   model: MindmapModel;
   selectedNoteId?: string | null;
   onSelectNote?: (noteId: string | null) => void;
+  onHoverNote?: (noteId: string | null) => void;
 }
 
 type GraphNode = {
@@ -31,7 +32,7 @@ const colorFor = (clusterId: string) => {
   return palette[hash % palette.length];
 };
 
-export function MindmapCanvas({ model, selectedNoteId, onSelectNote }: MindmapCanvasProps) {
+export function MindmapCanvas({ model, selectedNoteId, onSelectNote, onHoverNote }: MindmapCanvasProps) {
   const graphData = useMemo(() => {
     const width = 960;
     const height = 560;
@@ -108,7 +109,12 @@ export function MindmapCanvas({ model, selectedNoteId, onSelectNote }: MindmapCa
     <section className="panel mindmap-panel">
       <h2>Mindmap</h2>
       <div className="mindmap-canvas-wrap" role="img" aria-label="Mindmap visualisering">
-        <svg viewBox={`0 0 ${graphData.width} ${graphData.height}`} className="mindmap-svg" onClick={() => onSelectNote?.(null)}>
+        <svg
+          viewBox={`0 0 ${graphData.width} ${graphData.height}`}
+          className="mindmap-svg"
+          onClick={() => onSelectNote?.(null)}
+          onMouseLeave={() => onHoverNote?.(null)}
+        >
           <defs>
             <linearGradient id="edgeGradient" x1="0" x2="1" y1="0" y2="1">
               <stop offset="0%" stopColor="#6f8ce8" stopOpacity="0.35" />
@@ -141,6 +147,8 @@ export function MindmapCanvas({ model, selectedNoteId, onSelectNote }: MindmapCa
               key={node.id}
               transform={`translate(${node.x}, ${node.y})`}
               className={`mindmap-node${selectedNoteId === node.id ? ' is-selected' : ''}`}
+              onMouseEnter={() => onHoverNote?.(node.id)}
+              onMouseLeave={() => onHoverNote?.(null)}
               onClick={(event) => {
                 event.stopPropagation();
                 onSelectNote?.(selectedNoteId === node.id ? null : node.id);
