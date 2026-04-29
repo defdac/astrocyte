@@ -1,5 +1,5 @@
 import type { Note } from '../types';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ClipboardEvent, KeyboardEvent } from 'react';
 import MDEditor from '@uiw/react-md-editor';
 
@@ -16,10 +16,16 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingMetadata, setIsGeneratingMetadata] = useState(false);
   const isPasteShortcutPending = useRef(false);
-  const isPreviewing = Boolean(previewNote);
-  const displayedTitle = previewNote?.title ?? title;
-  const displayedText = previewNote?.text ?? text;
-  const displayedTags = previewNote?.tags.join(', ') ?? tags;
+  const displayedTitle = title;
+  const displayedText = text;
+  const displayedTags = tags;
+
+  useEffect(() => {
+    if (!previewNote) return;
+    setTitle(previewNote.title);
+    setText(previewNote.text);
+    setTags(previewNote.tags.join(', '));
+  }, [previewNote]);
 
   const fillGeneratedMetadata = async (nextText: string) => {
     if (!nextText.trim()) return;
@@ -35,20 +41,18 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
 
   return (
     <section className="panel note-editor-panel">
-      <h2>{isPreviewing ? 'Förhandsvisning av anteckning' : 'Ny anteckning'}</h2>
+      <h2>Ny anteckning</h2>
       <input value={displayedTitle} placeholder="Titel (autogenereras vid sparning)" readOnly />
       <div className="note-editor-md">
         <MDEditor
           value={displayedText}
           onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
-            if (isPreviewing) return;
             const isPasteShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v';
             if (isPasteShortcut) {
               isPasteShortcutPending.current = true;
             }
           }}
           onChange={(value: string | undefined) => {
-            if (isPreviewing) return;
             const nextText = value ?? '';
             setText(nextText);
             if (isPasteShortcutPending.current) {
@@ -59,8 +63,7 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
           textareaProps={{
             placeholder: 'Skriv din anteckning',
             onPaste: (e: ClipboardEvent<HTMLTextAreaElement>) => {
-              if (isPreviewing) return;
-              isPasteShortcutPending.current = false;
+                isPasteShortcutPending.current = false;
               const pasted = e.clipboardData.getData('text');
               const target = e.currentTarget;
               const start = target.selectionStart ?? displayedText.length;
@@ -69,15 +72,15 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
               void fillGeneratedMetadata(nextText);
             }
           }}
-          preview={isPreviewing ? 'preview' : 'live'}
-          hideToolbar={isPreviewing}
+          preview="live"
+          hideToolbar={false}
           height="100%"
         />
       </div>
       <input value={displayedTags} placeholder="Taggar (autogenereras vid sparning)" readOnly />
       <button
         onClick={async () => {
-          if (!text || isSaving || isPreviewing) return;
+          if (!text || isSaving) return;
           setIsSaving(true);
           try {
             const generated = await onSave(text);
@@ -88,11 +91,11 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
             setIsSaving(false);
           }
         }}
-        disabled={!text || isSaving || isGeneratingMetadata || isPreviewing}
+        disabled={!text || isSaving || isGeneratingMetadata}
       >
         {isSaving ? 'Sparar…' : 'Spara'}
       </button>
-      {isGeneratingMetadata && !isPreviewing && <small>Genererar rubrik och taggar från inklistrad text…</small>}
+      {isGeneratingMetadata && <small>Genererar rubrik och taggar från inklistrad text…</small>}
     </section>
   );
 }
