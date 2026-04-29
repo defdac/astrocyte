@@ -32,10 +32,11 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
   };
 
   return (
-    <section className="panel">
+    <section className="panel note-editor-panel">
       <h2>{isPreviewing ? 'Förhandsvisning av anteckning' : 'Ny anteckning'}</h2>
       <input value={displayedTitle} placeholder="Titel (autogenereras vid sparning)" readOnly />
       <div
+        className="note-editor-md"
         onPaste={(e) => {
           if (isPreviewing) return;
           const pasted = e.clipboardData.getData('text');
@@ -52,9 +53,9 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
           textareaProps={{
             placeholder: 'Skriv din anteckning'
           }}
-          preview={isPreviewing ? 'preview' : 'edit'}
+          preview={isPreviewing ? 'preview' : 'live'}
           hideToolbar={isPreviewing}
-          height={280}
+          height="100%"
         />
       </div>
       <input value={displayedTags} placeholder="Taggar (autogenereras vid sparning)" readOnly />
