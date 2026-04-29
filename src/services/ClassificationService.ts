@@ -73,6 +73,32 @@ export class ClassificationService {
     }
   }
 
+  async canGenerate(): Promise<boolean> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), Math.min(this.settings.timeout_ms, 8000));
+    try {
+      const res = await fetch(this.buildRequestUrl('/v1/chat/completions'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(this.settings.api_key_optional ? { Authorization: `Bearer ${this.settings.api_key_optional}` } : {})
+        },
+        body: JSON.stringify({
+          model: this.settings.model_name,
+          messages: [{ role: 'user', content: 'ping' }],
+          max_tokens: 1,
+          temperature: 0
+        }),
+        signal: controller.signal
+      });
+      return res.ok;
+    } catch {
+      return false;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   private buildEndpoint(path: string): string {
     if (/^https?:\/\//i.test(path)) return path;
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;

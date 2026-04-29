@@ -1,5 +1,6 @@
 import type { Note } from '../types';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import type { ClipboardEvent, KeyboardEvent } from 'react';
 import MDEditor from '@uiw/react-md-editor';
 
 interface NoteEditorProps {
@@ -14,6 +15,7 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
   const [tags, setTags] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingMetadata, setIsGeneratingMetadata] = useState(false);
+  const isPasteShortcutPending = useRef(false);
   const isPreviewing = Boolean(previewNote);
   const displayedTitle = previewNote?.title ?? title;
   const displayedText = previewNote?.text ?? text;
@@ -38,14 +40,27 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
       <div className="note-editor-md">
         <MDEditor
           value={displayedText}
+          onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
+            if (isPreviewing) return;
+            const isPasteShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v';
+            if (isPasteShortcut) {
+              isPasteShortcutPending.current = true;
+            }
+          }}
           onChange={(value: string | undefined) => {
             if (isPreviewing) return;
-            setText(value ?? '');
+            const nextText = value ?? '';
+            setText(nextText);
+            if (isPasteShortcutPending.current) {
+              isPasteShortcutPending.current = false;
+              void fillGeneratedMetadata(nextText);
+            }
           }}
           textareaProps={{
             placeholder: 'Skriv din anteckning',
-            onPaste: (e) => {
+            onPaste: (e: ClipboardEvent<HTMLTextAreaElement>) => {
               if (isPreviewing) return;
+              isPasteShortcutPending.current = false;
               const pasted = e.clipboardData.getData('text');
               const target = e.currentTarget;
               const start = target.selectionStart ?? displayedText.length;
