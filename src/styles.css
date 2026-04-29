@@ -103,12 +103,61 @@ main {
 }
 
 .note-editor-panel .note-editor-md .w-md-editor-content {
-  height: calc(100% - 40px);
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.note-editor-panel .note-editor-md .w-md-editor-input,
+.note-editor-panel .note-editor-md .w-md-editor-area,
+.note-editor-panel .note-editor-md .w-md-editor-preview {
+  height: 100%;
+  min-height: 0;
+}
+
+.note-editor-panel .note-editor-md .w-md-editor-text {
+  height: 100%;
+  min-height: 100%;
+}
+
+.note-editor-panel .note-editor-md .w-md-editor-input {
+  overflow: hidden;
+}
+
+.note-editor-panel .note-editor-md .w-md-editor-area {
+  overflow: auto;
 }
 
 .note-editor-panel .note-editor-md .w-md-editor-preview {
   border: 1px solid #d4d8e0;
   border-radius: 8px;
+  overflow: auto;
+}
+
+.note-editor-panel .note-editor-md .w-md-editor-text-pre,
+.note-editor-panel .note-editor-md .wmde-markdown {
+  min-height: 100%;
+  max-height: none;
+  overflow: visible !important;
+}
+
+.note-editor-panel .note-editor-md .w-md-editor-text-input {
+  margin: 0;
+  padding: inherit;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  min-height: 100%;
+  max-height: none;
+  overflow: hidden !important;
+}
+
+.note-editor-panel .note-editor-md .w-md-editor-text-pre {
+  max-height: none;
+  overflow: hidden !important;
 }
 
 button {
@@ -224,13 +273,4 @@ button {
   background: white;
   border-radius: 12px;
   padding: 1rem;
-}
-
-
-.note-editor-panel .note-editor-md .w-md-editor-input,
-.note-editor-panel .note-editor-md .w-md-editor-text-pre,
-.note-editor-panel .note-editor-md .w-md-editor-text-input,
-.note-editor-panel .note-editor-md .wmde-markdown {
-  max-height: 100%;
-  overflow: auto !important;
 }
