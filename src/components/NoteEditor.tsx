@@ -1,5 +1,7 @@
 import type { Note } from '../types';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import type { ClipboardEvent, KeyboardEvent } from 'react';
+import MDEditor from '@uiw/react-md-editor';
 
 interface NoteEditorProps {
   onGenerateMetadata: (text: string) => Promise<{ title: string; tags: string[] }>;
@@ -13,6 +15,7 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
   const [tags, setTags] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingMetadata, setIsGeneratingMetadata] = useState(false);
+  const isPasteShortcutPending = useRef(false);
   const isPreviewing = Boolean(previewNote);
   const displayedTitle = previewNote?.title ?? title;
   const displayedText = previewNote?.text ?? text;
@@ -31,24 +34,46 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
   };
 
   return (
-    <section className="panel">
+    <section className="panel note-editor-panel">
       <h2>{isPreviewing ? 'Förhandsvisning av anteckning' : 'Ny anteckning'}</h2>
       <input value={displayedTitle} placeholder="Titel (autogenereras vid sparning)" readOnly />
-      <textarea
-        value={displayedText}
-        onChange={(e) => setText(e.target.value)}
-        onPaste={(e) => {
-          if (isPreviewing) return;
-          const pasted = e.clipboardData.getData('text');
-          const start = e.currentTarget.selectionStart ?? text.length;
-          const end = e.currentTarget.selectionEnd ?? text.length;
-          const nextText = `${text.slice(0, start)}${pasted}${text.slice(end)}`;
-          void fillGeneratedMetadata(nextText);
-        }}
-        placeholder="Skriv din anteckning"
-        rows={10}
-        readOnly={isPreviewing}
-      />
+      <div className="note-editor-md">
+        <MDEditor
+          value={displayedText}
+          onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
+            if (isPreviewing) return;
+            const isPasteShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v';
+            if (isPasteShortcut) {
+              isPasteShortcutPending.current = true;
+            }
+          }}
+          onChange={(value: string | undefined) => {
+            if (isPreviewing) return;
+            const nextText = value ?? '';
+            setText(nextText);
+            if (isPasteShortcutPending.current) {
+              isPasteShortcutPending.current = false;
+              void fillGeneratedMetadata(nextText);
+            }
+          }}
+          textareaProps={{
+            placeholder: 'Skriv din anteckning',
+            onPaste: (e: ClipboardEvent<HTMLTextAreaElement>) => {
+              if (isPreviewing) return;
+              isPasteShortcutPending.current = false;
+              const pasted = e.clipboardData.getData('text');
+              const target = e.currentTarget;
+              const start = target.selectionStart ?? displayedText.length;
+              const end = target.selectionEnd ?? displayedText.length;
+              const nextText = `${displayedText.slice(0, start)}${pasted}${displayedText.slice(end)}`;
+              void fillGeneratedMetadata(nextText);
+            }
+          }}
+          preview={isPreviewing ? 'preview' : 'live'}
+          hideToolbar={isPreviewing}
+          height="100%"
+        />
+      </div>
       <input value={displayedTags} placeholder="Taggar (autogenereras vid sparning)" readOnly />
       <button
         onClick={async () => {

@@ -135,6 +135,7 @@ export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [mindmap, setMindmap] = useState<MindmapModel>({ version: '1.0', notes: [], edges: [], clusters: [] });
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [llmStatus, setLlmStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
   const storageAdapter: StorageAdapter = useMemo(() => {
     if (settings.provider === 'dropbox') return new DropboxStorageAdapter();
@@ -162,6 +163,22 @@ export default function App() {
       })
       .catch(() => undefined);
   }, [settings, storageAdapter]);
+
+  useEffect(() => {
+    let cancelled = false;
+    classifier.updateSettings(settings.llm);
+    setLlmStatus('checking');
+
+    void (async () => {
+      const [healthOk, generationOk] = await Promise.all([classifier.healthcheck(), classifier.canGenerate()]);
+      if (cancelled) return;
+      setLlmStatus(healthOk && generationOk ? 'online' : 'offline');
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [classifier, settings.llm]);
 
   const saveNote = async (text: string) => {
     const baseNote = {
@@ -230,6 +247,11 @@ export default function App() {
     <div className="app-shell">
       <Sidebar active={view} onNavigate={setView} onOpenSettings={() => setSettingsOpen(true)} />
       <main>
+        {llmStatus === 'offline' && (
+          <div className="alert-banner" role="alert">
+            🔴 LLM offline: Could not reach the configured model endpoint at startup. Open Settings and test connection.
+          </div>
+        )}
         {view === 'notes' && <NotesList notes={notes} onDelete={(id) => void deleteNote(id)} />}
         {view === 'editor' && (
           <div className="editor-stack">

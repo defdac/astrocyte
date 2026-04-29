@@ -41,6 +41,16 @@ main {
   overflow: auto;
 }
 
+.alert-banner {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #f2a3a3;
+  background: #ffe3e3;
+  color: #8f1111;
+  font-weight: 600;
+}
+
 .editor-stack {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -67,6 +77,30 @@ main {
 .panel input[readonly] {
   background: #f7f9fc;
   color: #5f6b7d;
+}
+
+.panel .w-md-editor {
+  margin-bottom: 0.7rem;
+}
+
+.note-editor-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.note-editor-panel .note-editor-md {
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 0.7rem;
+}
+
+.note-editor-panel .note-editor-md .w-md-editor {
+  height: 100% !important;
+}
+
+.note-editor-panel .note-editor-md .w-md-editor-content {
+  height: calc(100% - 40px);
 }
 
 button {
