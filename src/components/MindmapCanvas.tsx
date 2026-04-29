@@ -11,6 +11,7 @@ type GraphNode = {
   id: string;
   name: string;
   subtitle: string;
+  preview: string;
   val: number;
   color: string;
   x: number;
@@ -71,6 +72,7 @@ export function MindmapCanvas({ model, selectedNoteId, onSelectNote }: MindmapCa
       const val = 26 + links.length * 5 + Math.min(note.tags.length, 5) * 3;
       const label = note.title.trim() || 'Untitled note';
       const subtitle = note.tags.slice(0, 2).join(' • ');
+      const preview = note.text.trim().replace(/\s+/g, ' ').slice(0, 220);
 
       const fallbackAngle = (index / Math.max(model.notes.length, 1)) * Math.PI * 2;
       const fallbackDistance = 90 + (index % 6) * 28;
@@ -81,6 +83,7 @@ export function MindmapCanvas({ model, selectedNoteId, onSelectNote }: MindmapCa
         id: note.id,
         name: label.length > 24 ? `${label.slice(0, 21)}...` : label,
         subtitle,
+        preview,
         val,
         color: colorFor(primaryCluster?.id ?? note.id),
         x: baseX + Math.cos(localAngle) * localDistance,
@@ -143,6 +146,7 @@ export function MindmapCanvas({ model, selectedNoteId, onSelectNote }: MindmapCa
                 onSelectNote?.(selectedNoteId === node.id ? null : node.id);
               }}
             >
+              <title>{`${node.name}${node.preview ? `\n\n${node.preview}` : ''}`}</title>
               <circle r={node.val} fill={node.color} fillOpacity={0.95} />
               <text y={-4} textAnchor="middle">
                 {node.name}
