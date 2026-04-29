@@ -188,7 +188,9 @@ button {
   overflow: hidden;
   border: 1px solid #e3e9f6;
   background: radial-gradient(circle at top, #f4f8ff 0%, #edf3ff 40%, #e7efff 100%);
-  min-height: 0;
+  min-height: 320px;
+  flex: 1;
+  position: relative;
 }
 
 .mindmap-svg {
