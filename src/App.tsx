@@ -166,17 +166,25 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    classifier.updateSettings(settings.llm);
-    setLlmStatus('checking');
 
-    void (async () => {
+    const checkLlm = async () => {
+      classifier.updateSettings(settings.llm);
       const [healthOk, generationOk] = await Promise.all([classifier.healthcheck(), classifier.canGenerate()]);
       if (cancelled) return;
       setLlmStatus(healthOk && generationOk ? 'online' : 'offline');
-    })();
+    };
+
+    setLlmStatus('checking');
+    void checkLlm();
+
+    const retryTimer = window.setInterval(() => {
+      if (cancelled) return;
+      void checkLlm();
+    }, 5000);
 
     return () => {
       cancelled = true;
+      window.clearInterval(retryTimer);
     };
   }, [classifier, settings.llm]);
 
