@@ -1,5 +1,6 @@
 import type { Note } from '../types';
 import { useState } from 'react';
+import MDEditor from '@uiw/react-md-editor';
 
 interface NoteEditorProps {
   onGenerateMetadata: (text: string) => Promise<{ title: string; tags: string[] }>;
@@ -34,21 +35,28 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
     <section className="panel">
       <h2>{isPreviewing ? 'Förhandsvisning av anteckning' : 'Ny anteckning'}</h2>
       <input value={displayedTitle} placeholder="Titel (autogenereras vid sparning)" readOnly />
-      <textarea
-        value={displayedText}
-        onChange={(e) => setText(e.target.value)}
+      <div
         onPaste={(e) => {
           if (isPreviewing) return;
           const pasted = e.clipboardData.getData('text');
-          const start = e.currentTarget.selectionStart ?? text.length;
-          const end = e.currentTarget.selectionEnd ?? text.length;
-          const nextText = `${text.slice(0, start)}${pasted}${text.slice(end)}`;
+          const nextText = `${displayedText}${displayedText ? '\n' : ''}${pasted}`;
           void fillGeneratedMetadata(nextText);
         }}
-        placeholder="Skriv din anteckning"
-        rows={10}
-        readOnly={isPreviewing}
-      />
+      >
+        <MDEditor
+          value={displayedText}
+          onChange={(value: string | undefined) => {
+            if (isPreviewing) return;
+            setText(value ?? '');
+          }}
+          textareaProps={{
+            placeholder: 'Skriv din anteckning'
+          }}
+          preview={isPreviewing ? 'preview' : 'edit'}
+          hideToolbar={isPreviewing}
+          height={280}
+        />
+      </div>
       <input value={displayedTags} placeholder="Taggar (autogenereras vid sparning)" readOnly />
       <button
         onClick={async () => {

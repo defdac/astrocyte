@@ -69,6 +69,10 @@ main {
   color: #5f6b7d;
 }
 
+.panel .w-md-editor {
+  margin-bottom: 0.7rem;
+}
+
 button {
   padding: 0.55rem 0.9rem;
   border-radius: 8px;
