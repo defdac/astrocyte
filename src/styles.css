@@ -53,7 +53,7 @@ main {
 
 .editor-stack {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1rem;
   height: 100%;
   min-height: 0;
@@ -87,6 +87,7 @@ main {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 }
 
 .note-editor-panel .note-editor-md {
@@ -97,6 +98,8 @@ main {
 
 .note-editor-panel .note-editor-md .w-md-editor {
   height: 100% !important;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .note-editor-panel .note-editor-md .w-md-editor-content {
@@ -221,4 +224,13 @@ button {
   background: white;
   border-radius: 12px;
   padding: 1rem;
+}
+
+
+.note-editor-panel .note-editor-md .w-md-editor-input,
+.note-editor-panel .note-editor-md .w-md-editor-text-pre,
+.note-editor-panel .note-editor-md .w-md-editor-text-input,
+.note-editor-panel .note-editor-md .wmde-markdown {
+  max-height: 100%;
+  overflow: auto !important;
 }
