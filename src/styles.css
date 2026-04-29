@@ -69,6 +69,35 @@ main {
   color: #5f6b7d;
 }
 
+.panel .w-md-editor {
+  margin-bottom: 0.7rem;
+}
+
+.note-editor-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.note-editor-panel .note-editor-md {
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 0.7rem;
+}
+
+.note-editor-panel .note-editor-md .w-md-editor {
+  height: 100% !important;
+}
+
+.note-editor-panel .note-editor-md .w-md-editor-content {
+  height: calc(100% - 40px);
+}
+
+.note-editor-panel .note-editor-md .w-md-editor-preview {
+  border: 1px solid #d4d8e0;
+  border-radius: 8px;
+}
+
 button {
   padding: 0.55rem 0.9rem;
   border-radius: 8px;
