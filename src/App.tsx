@@ -265,7 +265,11 @@ export default function App() {
         {view === 'notes' && <NotesList notes={notes} onDelete={(id) => void deleteNote(id)} />}
         {view === 'editor' && (
           <div className="editor-stack">
-            <NoteEditor onGenerateMetadata={generateMetadata} onSave={saveNote} previewNote={previewNote} />
+            <NoteEditor
+              onGenerateMetadata={generateMetadata}
+              onSave={saveNote}
+              previewNote={previewNote}
+            />
             <MindmapCanvas
               model={mindmap}
               selectedNoteId={selectedNoteId}

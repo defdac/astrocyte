@@ -19,12 +19,21 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
   const displayedTitle = title;
   const displayedText = text;
   const displayedTags = tags;
+  const resetDraft = () => {
+    setTitle('');
+    setText('');
+    setTags('');
+  };
 
   useEffect(() => {
-    if (!previewNote) return;
-    setTitle(previewNote.title);
-    setText(previewNote.text);
-    setTags(previewNote.tags.join(', '));
+    if (previewNote) {
+      setTitle(previewNote.title);
+      setText(previewNote.text);
+      setTags(previewNote.tags.join(', '));
+      return;
+    }
+
+    resetDraft();
   }, [previewNote]);
 
   const fillGeneratedMetadata = async (nextText: string) => {
@@ -83,10 +92,8 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
           if (!text || isSaving) return;
           setIsSaving(true);
           try {
-            const generated = await onSave(text);
-            setTitle(generated.title);
-            setTags(generated.tags.join(', '));
-            setText('');
+            await onSave(text);
+            resetDraft();
           } finally {
             setIsSaving(false);
           }
