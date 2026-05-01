@@ -190,9 +190,10 @@ export default function App() {
     };
   }, [classifier, settings.llm]);
 
-  const saveNote = async (text: string) => {
+  const saveNote = async (text: string, existingNoteId?: string | null) => {
+    const existingNote = existingNoteId ? notes.find((note) => note.id === existingNoteId) ?? null : null;
     const baseNote = {
-      id: `n_${crypto.randomUUID().slice(0, 8)}`,
+      id: existingNote?.id ?? `n_${crypto.randomUUID().slice(0, 8)}`,
       title: '',
       text,
       tags: [],
@@ -213,7 +214,9 @@ export default function App() {
       tags: generated.tags
     };
 
-    const nextNotes = [note, ...notes];
+    const nextNotes = existingNote
+      ? notes.map((current) => (current.id === existingNote.id ? note : current))
+      : [note, ...notes];
     const nextMindmap = buildMindmap(nextNotes);
 
     await storageAdapter.saveNote(note);
@@ -221,6 +224,8 @@ export default function App() {
 
     setNotes(nextNotes);
     setMindmap(nextMindmap);
+    setEditorNoteId(note.id);
+    setSelectedNoteId(note.id);
     setView('editor');
     return generated;
   };
@@ -253,6 +258,7 @@ export default function App() {
 
   const activePreviewNoteId = hoveredNoteId ?? selectedNoteId ?? editorNoteId;
   const previewNote = activePreviewNoteId ? notes.find((note) => note.id === activePreviewNoteId) ?? null : null;
+  const editorNote = editorNoteId ? notes.find((note) => note.id === editorNoteId) ?? null : null;
 
   const handleSelectNote = (noteId: string | null) => {
     setSelectedNoteId(noteId);
@@ -271,7 +277,7 @@ export default function App() {
         {view === 'notes' && <NotesList notes={notes} onDelete={(id) => void deleteNote(id)} />}
         {view === 'editor' && (
           <div className="editor-stack">
-            <NoteEditor onGenerateMetadata={generateMetadata} onSave={saveNote} previewNote={previewNote} />
+            <NoteEditor onGenerateMetadata={generateMetadata} onSave={saveNote} editorNote={editorNote} />
             <MindmapCanvas
               model={mindmap}
               selectedNoteId={selectedNoteId}
