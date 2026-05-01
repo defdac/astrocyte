@@ -5,11 +5,11 @@ import MDEditor from '@uiw/react-md-editor';
 
 interface NoteEditorProps {
   onGenerateMetadata: (text: string) => Promise<{ title: string; tags: string[] }>;
-  onSave: (text: string) => Promise<{ title: string; tags: string[] }>;
-  previewNote?: Note | null;
+  onSave: (text: string, noteId?: string | null) => Promise<{ title: string; tags: string[] }>;
+  editorNote?: Note | null;
 }
 
-export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEditorProps) {
+export function NoteEditor({ onGenerateMetadata, onSave, editorNote }: NoteEditorProps) {
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState('');
@@ -21,11 +21,11 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
   const displayedTags = tags;
 
   useEffect(() => {
-    if (!previewNote) return;
-    setTitle(previewNote.title);
-    setText(previewNote.text);
-    setTags(previewNote.tags.join(', '));
-  }, [previewNote]);
+    if (!editorNote) return;
+    setTitle(editorNote.title);
+    setText(editorNote.text);
+    setTags(editorNote.tags.join(', '));
+  }, [editorNote]);
 
   const fillGeneratedMetadata = async (nextText: string) => {
     if (!nextText.trim()) return;
@@ -83,10 +83,10 @@ export function NoteEditor({ onGenerateMetadata, onSave, previewNote }: NoteEdit
           if (!text || isSaving) return;
           setIsSaving(true);
           try {
-            const generated = await onSave(text);
+            const generated = await onSave(text, editorNote?.id);
             setTitle(generated.title);
             setTags(generated.tags.join(', '));
-            setText('');
+            if (!editorNote?.id) setText('');
           } finally {
             setIsSaving(false);
           }
