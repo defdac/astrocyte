@@ -136,6 +136,7 @@ export default function App() {
   const [mindmap, setMindmap] = useState<MindmapModel>({ version: '1.0', notes: [], edges: [], clusters: [] });
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [hoveredNoteId, setHoveredNoteId] = useState<string | null>(null);
+  const [editorNoteId, setEditorNoteId] = useState<string | null>(null);
   const [llmStatus, setLlmStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
   const storageAdapter: StorageAdapter = useMemo(() => {
@@ -250,8 +251,13 @@ export default function App() {
     setMindmap(nextMindmap);
   };
 
-  const activePreviewNoteId = hoveredNoteId ?? selectedNoteId;
+  const activePreviewNoteId = hoveredNoteId ?? selectedNoteId ?? editorNoteId;
   const previewNote = activePreviewNoteId ? notes.find((note) => note.id === activePreviewNoteId) ?? null : null;
+
+  const handleSelectNote = (noteId: string | null) => {
+    setSelectedNoteId(noteId);
+    if (noteId) setEditorNoteId(noteId);
+  };
 
   return (
     <div className="app-shell">
@@ -269,7 +275,7 @@ export default function App() {
             <MindmapCanvas
               model={mindmap}
               selectedNoteId={selectedNoteId}
-              onSelectNote={setSelectedNoteId}
+              onSelectNote={handleSelectNote}
               onHoverNote={setHoveredNoteId}
             />
           </div>
